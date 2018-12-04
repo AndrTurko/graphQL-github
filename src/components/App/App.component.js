@@ -6,7 +6,7 @@ import StarredRepositories from './components/StarredRepositories';
 
 
 const CLIENT_ID = "11fd4835722176ccdc12";
-const REDIRECT_URI = "http://localhost:3000";
+const REDIRECT_URI = process.env.REDIRECT_URI || "http://localhost:3000";
 
 const client = new ApolloClient({
   uri: 'https://api.github.com/graphql',
