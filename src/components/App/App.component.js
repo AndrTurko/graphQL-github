@@ -6,14 +6,19 @@ import StarredRepositories from './components/StarredRepositories';
 
 
 const CLIENT_ID = "11fd4835722176ccdc12";
-const REDIRECT_URI = "https://graphql-github.netlify.com";
+const REDIRECT_URI = "http://localhost:3000";
 
 const client = new ApolloClient({
   uri: 'https://api.github.com/graphql',
-  headers: {
-    Authorization: `bearer ${
-      process.env.REACT_APP_GITHUB_PERSONAL_ACCESS_TOKEN
-      }`,
+  request: operation => {
+    const token = localStorage.getItem("github_token");
+    if (token) {
+      operation.setContext({
+        headers: {
+          authorization: `Bearer ${token}`
+        }
+      });
+    }
   },
   clientState: {
     defaults: {},
@@ -24,22 +29,22 @@ const client = new ApolloClient({
 
 const AUTH_API_URI = "https://gatekeeper-graphql.herokuapp.com/authenticate";
 class App extends React.Component {
-  componentDidMount() {
-    
+  state = {
+    token: ''
   }
-
   fetchToken () {
     const code =
       window.location.href.match(/[?]code=(.*)/) &&
       window.location.href.match(/[?]code=(.*)/)[1];
     if (code) {
-      
-      fetch(`${AUTH_API_URI}${code}`, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          // "Content-Type": "application/x-www-form-urlencoded",
-      },
-      })
+      var request = new Request(`${AUTH_API_URI}/${code}`, {
+        method: 'GET',
+        cache: 'no-cache',
+        mode:'cors',
+        credentials : 'omit'
+        });
+        
+      fetch(request)
         .then(response => response.json())
         .then(({ token }) => {
           console.log(token);
@@ -63,7 +68,7 @@ class App extends React.Component {
       <button onClick={()=>this.fetchToken()}>fetch</button>
         <Wrapper>
           <p>Starred repositories:</p>
-          <StarredRepositories />
+          {this.state.token && <StarredRepositories />}
         </Wrapper>
         <GlobalStyle />
       </ApolloProvider>
