@@ -1,22 +1,20 @@
-import React, { Component } from 'react';
-import { ApolloProvider } from 'react-apollo';
+import React from 'react';
+import { ApolloProvider, Query } from 'react-apollo';
+import gql from 'graphql-tag';
 import ApolloClient from 'apollo-boost';
 import { Wrapper, GlobalStyle } from './App.styled';
 import StarredRepositories from './components/StarredRepositories';
-
-
-const CLIENT_ID = "11fd4835722176ccdc12";
-const REDIRECT_URI = process.env.REDIRECT_URI || "http://localhost:3000";
+import LoginPage from './components/LoginPage';
 
 const client = new ApolloClient({
   uri: 'https://api.github.com/graphql',
-  request: operation => {
-    const token = localStorage.getItem("github_token");
+  request: (operation) => {
+    const token = localStorage.getItem('github_token');
     if (token) {
       operation.setContext({
         headers: {
-          authorization: `Bearer ${token}`
-        }
+          authorization: `Bearer ${token}`,
+        },
       });
     }
   },
@@ -27,54 +25,39 @@ const client = new ApolloClient({
   connectToDevTools: true,
 });
 
-const AUTH_API_URI = "https://gatekeeper-graphql.herokuapp.com/authenticate";
-class App extends React.Component {
-  state = {
-    token: ''
-  }
-  fetchToken () {
-    const code =
-      window.location.href.match(/[?]code=(.*)/) &&
-      window.location.href.match(/[?]code=(.*)/)[1];
-    if (code) {
-      var request = new Request(`${AUTH_API_URI}/${code}`, {
-        method: 'GET',
-        cache: 'no-cache',
-        mode:'cors',
-        credentials : 'omit'
-        });
-        
-      fetch(request)
-        .then(response => response.json())
-        .then(({ token }) => {
-          console.log(token);
-          localStorage.setItem("github_token", token);
-          this.setState({
-            token,
-            
-          });
-        });
+const GET_LOGIN = gql`
+  query {
+    viewer {
+      login
     }
   }
+`;
 
-  render() {
-    return (
-      <ApolloProvider client={client}>
-        <a
-          href={`https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=user&redirect_uri=${REDIRECT_URI}`}
-        >
-          Login
-      </a>
-      <button onClick={()=>this.fetchToken()}>fetch</button>
-        <Wrapper>
-          <p>Starred repositories:</p>
-          {this.state.token && <StarredRepositories />}
-        </Wrapper>
-        <GlobalStyle />
-      </ApolloProvider>
-    );
-  }
+const App = () => {
+  const token = localStorage.getItem('github_token');
+  return (
+    <ApolloProvider client={client}>
+      {
+        token
+          ? (
+            <Wrapper>
+              <p>Starred repositories:</p>
+              <Query query={GET_LOGIN}>
+                {({ loading, error, data }) => {
+                  if (loading) return <div>Loading...</div>;
+                  if (error) return <div>Error :(</div>;
 
-}
+                  return <StarredRepositories userLogin={data.viewer.login} />;
+                }}
+
+              </Query>
+            </Wrapper>
+          )
+          : <LoginPage />
+      }
+      <GlobalStyle />
+    </ApolloProvider>
+  );
+};
 
 export default App;

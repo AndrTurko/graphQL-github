@@ -1,7 +1,7 @@
 import React from 'react';
 import { Query } from 'react-apollo';
-import { Trail, animated, config } from 'react-spring';
 import gql from 'graphql-tag';
+import { Trail, animated, config } from 'react-spring';
 import StarredRepository from './components/StarredRepository.component';
 import { RepositoriesWrapper, Button } from './StarredRepositories.styled';
 
@@ -65,8 +65,8 @@ const fetchReps = (fetchMore, data) => {
   });
 };
 
-const StarredRepositories = () => (
-  <Query query={GET_STARRED_REPOSITORIES} variables={{ userLogin: 'andrturko' }}>
+const StarredRepositories = ({ userLogin }) => (
+  <Query query={GET_STARRED_REPOSITORIES} variables={{ userLogin }}>
     {({ data, loading, error, fetchMore }) => {
       if (loading) return <p>Loading...</p>;
       if (error) return <p>{error}</p>;
